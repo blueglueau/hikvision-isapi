@@ -1,0 +1,44 @@
+src/Client/Providers/DeviceConfiguration.php
+  s_c652f3f06160e8::t_b708067f07baf6 1-46
+src/Client/DeviceManager.php
+  s_c652f3f06160e8::t_b708067f07baf6 26-29,62-71,144,149,151,166-167,180-181
+  s_c652f3f06160e8::t_9f5a717b9f7824 38,128
+src/Facades/HikvisionIsapi.php
+  s_c652f3f06160e8::t_b708067f07baf6 18-19
+src/Facades/Hikvision.php
+  s_c652f3f06160e8::t_9f5a717b9f7824 24-25
+tests/Feature/DeviceProvidersTest.php
+  s_c652f3f06160e8::t_ed3595d6579a74 1-136
+tests/Feature/DeviceLifecycleTest.php
+  s_c652f3f06160e8::t_ed3595d6579a74 1-9,13-18,25-39,41-43,45,47-51,53-55,57-70,87-88
+  s_c652f3f06160e8::t_27185d4ca2e565 11,52,56
+  s_c652f3f06160e8::t_14ab3e33b3b01d 12,20-24,40,44,46,71-86
+  s_c652f3f06160e8::t_78750038556164 10
+  s_c652f3f06160e8::t_7734959c522c5e 19
+src/HikvisionIsapiServiceProvider.php
+  s_c652f3f06160e8::t_b708067f07baf6 28-29,45-46,73,78
+src/Client/HikvisionClient.php
+  s_c652f3f06160e8::t_9f5a717b9f7824 22
+src/Client/Providers/DatabaseDeviceProvider.php
+  s_c652f3f06160e8::t_b708067f07baf6 7,43-46,59,124-131,145,164,177-179,181-183,188-192
+src/Client/Providers/CallbackDeviceProvider.php
+  s_c652f3f06160e8::t_b708067f07baf6 8,38,44-45,90-96,129,146,151-153,196,198-199,205,208-210,213,215-225
+CHANGELOG.md
+  s_c652f3f06160e8::t_b708067f07baf6 31-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "90155cf7b46826761b731bf1fd770ae12c56ce71",
+  "prompts": {},
+  "sessions": {
+    "s_c652f3f06160e8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13a66-f8bd-79d0-87af-e46fa9e841c7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Theo <theodson@gmail.com>"
+    }
+  }
+}

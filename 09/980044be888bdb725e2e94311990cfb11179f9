@@ -1,0 +1,24 @@
+src/Client/HttpClient.php
+  s_c652f3f06160e8::t_c580bc0e60c795 132-134
+CHANGELOG.md
+  s_c652f3f06160e8::t_c580bc0e60c795 31
+tests/Unit/Client/ResponseValidationTest.php
+  s_c652f3f06160e8::t_2015850ce70191 87-108
+  s_c652f3f06160e8::t_7bcf5574d4a4a6 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "09980044be888bdb725e2e94311990cfb11179f9",
+  "prompts": {},
+  "sessions": {
+    "s_c652f3f06160e8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13a66-f8bd-79d0-87af-e46fa9e841c7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Theo <theodson@gmail.com>"
+    }
+  }
+}

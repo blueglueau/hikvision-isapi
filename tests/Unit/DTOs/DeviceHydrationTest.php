@@ -47,4 +47,16 @@ class DeviceHydrationTest extends TestCase
         $this->expectException(InvalidResponseException::class);
         Face::fromArray(['faceInfo' => ['faceLibId' => '2.5']]);
     }
+
+    public function test_empty_xml_fields_and_numeric_identifiers_are_normalized(): void
+    {
+        $person = Person::fromArray(['employeeNo' => 123, 'name' => [], 'Valid' => ['beginTime' => []], 'email' => [], 'organizationId' => []]);
+        $this->assertSame('123', $person->employeeNo);
+        $this->assertSame('', $person->name);
+        $this->assertSame('', $person->beginTime);
+        $this->assertSame('', $person->email);
+        $this->assertNull($person->organizationId);
+        $this->assertSame('', Card::fromArray(['cardType' => []])->cardType);
+        $this->assertSame('', Face::fromArray(['faceData' => []])->faceData);
+    }
 }

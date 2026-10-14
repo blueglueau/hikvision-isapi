@@ -12,7 +12,7 @@ final readonly class Face
 
     public function __construct(
         public string $employeeNo,
-        public string $faceData,
+        #[\SensitiveParameter] public string $faceData,
         public ?int $faceLibId = 1,
         public ?string $faceLibType = 'blackFD'
     ) {}
@@ -28,15 +28,15 @@ final readonly class Face
         ];
     }
 
-    public static function fromArray(array $data): self
+    public static function fromArray(#[\SensitiveParameter] array $data): self
     {
         $faceInfo = $data['faceInfo'] ?? $data;
 
         return new self(
-            employeeNo: $faceInfo['employeeNo'] ?? '',
-            faceData: $data['faceData'] ?? '',
+            employeeNo: self::deviceString($faceInfo['employeeNo'] ?? ''),
+            faceData: self::deviceString($data['faceData'] ?? ''),
             faceLibId: self::deviceInteger(array_key_exists('faceLibId', $faceInfo) ? $faceInfo['faceLibId'] : 1),
-            faceLibType: $faceInfo['faceLibType'] ?? 'blackFD'
+            faceLibType: self::deviceNullableString($faceInfo['faceLibType'] ?? 'blackFD')
         );
     }
 }

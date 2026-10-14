@@ -60,4 +60,11 @@ class XmlPayloadTest extends TestCase
         $this->assertSame('false', (string) $xml->enabled);
         $this->assertSame('/receive?a=1&b=2', (string) $xml->url);
     }
+
+    public function test_filtered_numeric_lists_do_not_require_reindexing(): void
+    {
+        $xml = $this->serialize(['HttpHostNotification' => ['eventList' => ['eventType' => [2 => 'AccessControllerEvent', 7 => 'videoloss']]]]);
+
+        $this->assertCount(2, $xml->eventList->eventType);
+    }
 }

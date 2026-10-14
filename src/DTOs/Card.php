@@ -28,14 +28,14 @@ final readonly class Card
         ];
     }
 
-    public static function fromArray(array $data): self
+    public static function fromArray(#[\SensitiveParameter] array $data): self
     {
         $cardInfo = $data['CardInfo'] ?? $data;
 
         return new self(
-            employeeNo: $cardInfo['employeeNo'] ?? '',
-            cardNo: $cardInfo['cardNo'] ?? '',
-            cardType: $cardInfo['cardType'] ?? null,
+            employeeNo: self::deviceString($cardInfo['employeeNo'] ?? ''),
+            cardNo: self::deviceString($cardInfo['cardNo'] ?? ''),
+            cardType: self::deviceNullableString($cardInfo['cardType'] ?? null),
             enabled: self::deviceBoolean($cardInfo['enabled'] ?? true)
         );
     }

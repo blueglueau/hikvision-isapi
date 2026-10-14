@@ -256,7 +256,7 @@ class HttpClient implements HttpClientInterface
             $this->validateXmlName($key);
             // Each list item repeats its field name; numeric array indices are
             // never XML element names (RightPlan and eventType both use lists).
-            $items = is_array($value) && array_is_list($value) && $value !== [] ? $value : [$value];
+            $items = is_array($value) && $value !== [] && count(array_filter(array_keys($value), 'is_string')) === 0 ? $value : [$value];
             foreach ($items as $item) {
                 if (is_array($item)) {
                     $child = $xml->addChild($key);

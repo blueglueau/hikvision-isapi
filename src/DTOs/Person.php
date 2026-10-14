@@ -72,7 +72,7 @@ final readonly class Person
         return ['UserInfo' => $userInfo];
     }
 
-    public static function fromArray(array $data): self
+    public static function fromArray(#[\SensitiveParameter] array $data): self
     {
         $userInfo = $data['UserInfo'] ?? $data;
 
@@ -88,16 +88,16 @@ final readonly class Person
         }
 
         return new self(
-            employeeNo: $userInfo['employeeNo'] ?? '',
-            name: $userInfo['name'] ?? '',
+            employeeNo: self::deviceString($userInfo['employeeNo'] ?? ''),
+            name: self::deviceString($userInfo['name'] ?? ''),
             userType: UserType::from($userInfo['userType'] ?? 'normal'),
             validEnabled: self::deviceBoolean($userInfo['Valid']['enable'] ?? true),
-            beginTime: $userInfo['Valid']['beginTime'] ?? null,
-            endTime: $userInfo['Valid']['endTime'] ?? null,
-            doorRight: $userInfo['doorRight'] ?? null,
+            beginTime: self::deviceNullableString($userInfo['Valid']['beginTime'] ?? null),
+            endTime: self::deviceNullableString($userInfo['Valid']['endTime'] ?? null),
+            doorRight: self::deviceNullableString($userInfo['doorRight'] ?? null),
             rightPlan: isset($userInfo['RightPlan']) && !array_is_list($userInfo['RightPlan']) ? [$userInfo['RightPlan']] : ($userInfo['RightPlan'] ?? []),
-            email: $userInfo['email'] ?? null,
-            phoneNumber: $userInfo['phoneNumber'] ?? null,
+            email: self::deviceNullableString($userInfo['email'] ?? null),
+            phoneNumber: self::deviceNullableString($userInfo['phoneNumber'] ?? null),
             organizationId: self::deviceInteger($userInfo['organizationId'] ?? null),
             belongGroup: $belongGroup
         );

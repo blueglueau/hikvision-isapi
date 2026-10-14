@@ -1,0 +1,4 @@
+/vendor/
+/audit.json
+/config/hikvision.php
+/storage/

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master, main]
+    branches: [master, main, support/1.6]
   pull_request:
 
 permissions:
@@ -21,11 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         php: ['8.2', '8.3', '8.4']
-        # Laravel 11 support was dropped: every laravel/framework 11.x release
-        # carries unresolved security advisories, and Composer 2.9+ refuses to
-        # resolve advisory-affected packages by default, so no Laravel 11
-        # version can be installed on a current runner. See
-        # docs/startup/04-paket-mustahkamlash.md, section G.
         laravel: ['12.*', '13.*']
         include:
           - laravel: '12.*'
@@ -49,17 +44,46 @@ jobs:
           coverage: none
 
       - name: Pin framework version
-        run: >
-          composer require
-          "illuminate/support:${{ matrix.laravel }}"
-          "orchestra/testbench:${{ matrix.testbench }}"
-          --no-interaction --no-update
+        run: |
+          composer require "illuminate/support:${{ matrix.laravel }}" --no-interaction --no-update
+          composer require --dev "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
 
       - name: Install dependencies
         run: composer update --prefer-dist --no-interaction --no-progress
 
       - name: Run tests
-        run: vendor/bin/phpunit
+        run: vendor/bin/phpunit --exclude-group integration
+
+  laravel11:
+    name: PHP ${{ matrix.php }} / Laravel 11
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+    defaults:
+      run:
+        working-directory: tests/Fixtures/laravel11
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:2.10.2
+          extensions: curl, json, simplexml, libxml, pdo_sqlite
+          coverage: none
+      - name: Validate compatibility fixture
+        run: composer validate --strict
+      - name: Install locked dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+      - name: Run tests
+        run: vendor/bin/phpunit --configuration ../../../phpunit.xml --bootstrap vendor/autoload.php --exclude-group integration
+      - name: Verify package discovery and application commands
+        run: php smoke.php
+      - name: Audit dependencies, rejecting additional advisories
+        run: |
+          composer audit --locked --format=json > audit.json || test "$?" -eq 1
+          php audit.php audit.json
 
   quality:
     name: Style, static analysis, audit

@@ -3,10 +3,40 @@
 [![Latest Version](https://img.shields.io/packagist/v/shaykhnazar/hikvision-isapi?include_prereleases&label=version)](https://packagist.org/packages/shaykhnazar/hikvision-isapi)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PHP Version](https://img.shields.io/badge/PHP-%5E8.2-blue.svg)](https://www.php.net/)
-[![Laravel Version](https://img.shields.io/badge/Laravel-12%20%7C%2013-red.svg)](https://laravel.com/)
+[![Laravel Version](https://img.shields.io/badge/Laravel-11%20%7C%2012%20%7C%2013-red.svg)](https://laravel.com/)
 
 Talk to Hikvision access-control terminals from Laravel: enrol people, push cards
 and faces, and read who went through which door.
+
+The **`support/1.6` branch restores Laravel 11 support**, including PHP 8.3,
+and retains Laravel 12/13 support. It also fixes XML serialization and DTO
+hydration, response validation, webhooks, device provider filtering and worker
+credential refresh. See the [CHANGELOG](CHANGELOG.md#unreleased) for details.
+To consume this branch, add your fork as a Composer VCS repository and require
+`shaykhnazar/hikvision-isapi:dev-support/1.6`; pin a reviewed commit or tagged
+fork release for deployment.
+
+Remaining integration concerns and suggested approaches:
+
+- **Laravel 11 advisories:** security support ended on 12 March 2026, and fresh
+  Composer resolution still blocks affected releases. Upgrade the application
+  to a supported Laravel release, or maintain reviewed framework patches and
+  advisory-specific exceptions while retaining audit reporting. The exceptions
+  in the [compatibility fixture](tests/Fixtures/laravel11/composer.json) are for
+  testing only. See the [Laravel support policy](https://laravel.com/docs/11.x/releases#support-policy).
+- **Firmware behavior:** physical device validation remains outstanding. Probe
+  the intended model and firmware, then run controlled enrollment, paging and
+  webhook tests; see [Device compatibility](#device-compatibility).
+- **Tenant and worker context:** bind `hikvision.device.provider` with `scoped`,
+  build its query after resolving the tenant, and call `DeviceManager::reload()`
+  after credential changes. Resolve services again after a context change;
+  previously retained clients/services keep their original configuration.
+  Use `fromModel()` or `fromEloquent()` for tenant scopes and encrypted model
+  attributes; table providers and `fromCache()` read raw, unscoped records.
+- **Diagnostics:** set `zend.exception_ignore_args=1` in production. HTTP
+  exception messages and `responseBody()` can contain raw device replies;
+  log sanitized `statusCode()` and `isRetryable()` metadata instead. Third-party
+  HTTP exception traces can also contain credentials or personal data.
 
 ## Why this exists
 
@@ -54,7 +84,7 @@ package says so rather than guessing — see [Device compatibility](#device-comp
 - **Type Safety**: PHP 8.2+ features (enums, readonly properties)
 - **Performance**: Built-in caching with configurable TTL (v1.3.0+)
 - **XML/JSON Support**: Automatic format detection and conversion (v1.4.0+)
-- **Laravel 12/13**: Supports Laravel 12.x and 13.x with service provider and facade
+- **Laravel 11/12/13**: Supports Laravel 11.x, 12.x and 13.x with service provider and facade
 
 ## Table of Contents
 
@@ -120,7 +150,7 @@ pages, and which key it returns an event total under.
 ## Requirements
 
 - PHP ^8.2
-- Laravel / illuminate/support ^12.0 || ^13.0
+- Laravel / illuminate/support ^11.0 || ^12.0 || ^13.0
 - PHP ^8.3 is required when installing with Laravel 13
 - Guzzle HTTP ^7.8
 - ext-curl
@@ -1167,7 +1197,7 @@ use Shaykhnazar\HikvisionIsapi\Client\Providers\DatabaseDeviceProvider;
 public function register(): void
 {
     // Bind custom device provider
-    $this->app->singleton('hikvision.device.provider', function ($app) {
+    $this->app->scoped('hikvision.device.provider', function ($app) {
         return new DatabaseDeviceProvider(
             table: 'terminals',
             nameColumn: 'name',
@@ -1225,7 +1255,7 @@ use Shaykhnazar\HikvisionIsapi\Client\Providers\CallbackDeviceProvider;
 use App\Models\Terminal;
 
 // In your service provider
-$this->app->singleton('hikvision.device.provider', function ($app) {
+$this->app->scoped('hikvision.device.provider', function ($app) {
     return CallbackDeviceProvider::fromEloquent(
         query: Terminal::where('status', 'active')
                       ->where('company_id', auth()->user()->company_id),
@@ -1252,7 +1282,7 @@ use Shaykhnazar\HikvisionIsapi\Client\Providers\CallbackDeviceProvider;
 use App\Models\Terminal;
 
 // In AppServiceProvider
-$this->app->singleton('hikvision.device.provider', function ($app) {
+$this->app->scoped('hikvision.device.provider', function ($app) {
     return new CallbackDeviceProvider(
         deviceNamesCallback: function () {
             // Only load terminals for current tenant
@@ -1398,13 +1428,13 @@ $response = HikvisionIsapi::delete('/ISAPI/CustomEndpoint');
 
 ```bash
 # Run tests
-./vendor/bin/phpunit
+./vendor/bin/phpunit --exclude-group integration
 
 # Run specific test file
-./vendor/bin/phpunit tests/Feature/PersonServiceTest.php
+./vendor/bin/phpunit tests/Unit/Services/PersonServiceTest.php
 
 # Run with coverage
-./vendor/bin/phpunit --coverage-html coverage
+./vendor/bin/phpunit --exclude-group integration --coverage-html coverage
 ```
 
 ## Troubleshooting

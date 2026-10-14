@@ -35,14 +35,30 @@ run it.
 ## Changing the code
 
 ```bash
-composer install
-vendor/bin/phpunit          # 139 tests
+composer install           # Development lockfile requires PHP 8.4.1+
+vendor/bin/phpunit --exclude-group integration
 vendor/bin/pint             # code style
-vendor/bin/phpstan analyse  # level 6, no baseline
+vendor/bin/phpstan analyse  # level 5, no baseline
 ```
 
-All three run in CI across PHP 8.2/8.3/8.4 and Laravel 12/13. A pull request
-that does not pass them locally will not pass there.
+Tests run in CI across PHP 8.2/8.3/8.4 and Laravel 11/12/13 (Laravel 13 requires
+PHP 8.3+). Laravel 11 has a separate locked consumer fixture:
+
+```bash
+cd tests/Fixtures/laravel11
+composer install
+vendor/bin/phpunit --configuration ../../../phpunit.xml --bootstrap vendor/autoload.php --exclude-group integration
+php smoke.php
+composer audit --locked --format=json > audit.json
+php audit.php audit.json
+```
+
+Use Composer 2.10.2 for that fixture. Its installation-only advisory exceptions
+keep the four known Laravel 11 advisories visible; `audit.php` rejects additional
+advisories and abandoned dependencies. Do not copy its exceptions into an application
+without reviewing that application's exposure.
+
+A pull request that does not pass the required checks locally will not pass CI.
 
 ### What a good change looks like here
 

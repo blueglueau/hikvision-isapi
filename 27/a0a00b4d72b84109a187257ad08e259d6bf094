@@ -1,0 +1,29 @@
+src/Services/EventNotificationService.php
+  s_c652f3f06160e8::t_9cccec25519075 40,46,50-51,54-64,136,146-150,153,155,159,161,173,185,210,215
+CHANGELOG.md
+  s_c652f3f06160e8::t_9cccec25519075 31-32
+tests/Unit/Client/ResponseValidationTest.php
+  s_c652f3f06160e8::t_6685a99450a482 1-87
+tests/Unit/Services/EventNotificationServiceTest.php
+  s_c652f3f06160e8::t_6685a99450a482 1-88
+src/Client/HttpClient.php
+  s_c652f3f06160e8::t_9cccec25519075 16,103-108,112,117,127-165,294,301,311-316
+src/Exceptions/HikvisionException.php
+  s_c652f3f06160e8::t_9cccec25519075 14,30-31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "27a0a00b4d72b84109a187257ad08e259d6bf094",
+  "prompts": {},
+  "sessions": {
+    "s_c652f3f06160e8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13a66-f8bd-79d0-87af-e46fa9e841c7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Theo <theodson@gmail.com>"
+    }
+  }
+}

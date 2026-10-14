@@ -17,7 +17,7 @@ use Shaykhnazar\HikvisionIsapi\Exceptions\InvalidResponseException;
 
 class ResponseValidationTest extends TestCase
 {
-    private function request(string $body, string $type = 'application/json', int $status = 200): array
+    private function request(#[\SensitiveParameter] string $body, string $type = 'application/json', int $status = 200): array
     {
         $client = new HttpClient(new Client(['handler' => HandlerStack::create(new MockHandler([new Response($status, ['Content-Type' => $type], $body)]))]));
 
@@ -83,5 +83,27 @@ class ResponseValidationTest extends TestCase
         $this->assertSame(['statusCode' => 4, 'name' => 'data'], $this->request('{"statusCode":4,"name":"data"}'));
         $this->assertSame(['statusCode' => '4'], $this->request('<DeviceInfo><statusCode>4</statusCode></DeviceInfo>', 'application/xml'));
         $this->assertSame(['statusCode' => '7'], $this->request('<ResponseStatus><statusCode>7</statusCode></ResponseStatus>', 'application/xml'));
+    }
+
+    public function test_malformed_json_is_redacted_from_nested_exception_traces(): void
+    {
+        $previous = ini_get('zend.exception_ignore_args');
+        ini_set('zend.exception_ignore_args', '0');
+        try {
+            $this->request('{"SENSITIVE_FIXTURE":');
+            $this->fail('Expected an invalid response exception.');
+        } catch (InvalidResponseException $exception) {
+            for ($cause = $exception; $cause !== null; $cause = $cause->getPrevious()) {
+                foreach ($cause->getTrace() as $frame) {
+                    foreach ($frame['args'] ?? [] as $argument) {
+                        if (is_string($argument)) {
+                            $this->assertStringNotContainsString('SENSITIVE_FIXTURE', $argument);
+                        }
+                    }
+                }
+            }
+        } finally {
+            ini_set('zend.exception_ignore_args', (string) $previous);
+        }
     }
 }

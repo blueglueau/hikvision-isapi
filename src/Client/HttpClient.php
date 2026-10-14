@@ -129,7 +129,9 @@ class HttpClient implements HttpClientInterface
         try {
             $decoded = json_decode($body, true, 512, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
         } catch (\JsonException $exception) {
-            throw new InvalidResponseException('Device returned malformed JSON.', previous: $exception, statusCode: $httpStatus, responseBody: $body);
+            // json_decode's native exception trace contains the unredacted body.
+            // Preserve its error code without chaining that unsafe trace.
+            throw new InvalidResponseException('Device returned malformed JSON.', code: $exception->getCode(), statusCode: $httpStatus, responseBody: $body);
         }
 
         if (!is_array($decoded)) {

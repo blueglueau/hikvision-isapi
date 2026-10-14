@@ -85,7 +85,7 @@ class EventService
         yield from $this->walkSearch(
             function (int $position, string $searchId) use ($conditions, $pageSize): array {
                 $response = $this->searchAt($conditions, $position, $pageSize, $searchId);
-                $result = $response['AcsEvent'] ?? [];
+                $result = $response['AcsEvent'] ?? $response;
 
                 return [
                     'items' => self::normalizeInfoList($result['InfoList'] ?? []),

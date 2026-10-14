@@ -39,7 +39,7 @@ class PersonService
     {
         $response = $this->client->get(self::ENDPOINT_COUNT);
 
-        return $response['UserInfoCount']['userNumber'] ?? 0;
+        return (int) ($response['UserInfoCount']['userNumber'] ?? $response['userNumber'] ?? 0);
     }
 
     /**
@@ -94,7 +94,7 @@ class PersonService
             ],
         ]);
 
-        $result = $response['UserInfoSearch'] ?? [];
+        $result = $response['UserInfoSearch'] ?? $response;
 
         $persons = [];
 

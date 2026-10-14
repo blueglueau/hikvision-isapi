@@ -39,7 +39,7 @@ class CardService
         $params = $employeeNo ? ['employeeNo' => $employeeNo] : [];
         $response = $this->client->get(self::ENDPOINT_COUNT, $params);
 
-        return $response['CardInfo']['cardNumber'] ?? 0;
+        return (int) ($response['CardInfo']['cardNumber'] ?? $response['cardNumber'] ?? 0);
     }
 
     /**
@@ -117,7 +117,7 @@ class CardService
 
         $response = $this->client->post(self::ENDPOINT_SEARCH, ['CardInfoSearchCond' => $condition]);
 
-        $result = $response['CardInfoSearch'] ?? [];
+        $result = $response['CardInfoSearch'] ?? $response;
 
         $cards = [];
 

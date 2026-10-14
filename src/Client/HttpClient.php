@@ -163,7 +163,7 @@ class HttpClient implements HttpClientInterface
      * Convert array to XML string for Hikvision ISAPI
      * Automatically detects root element from array structure
      */
-    private function arrayToXml(array $data, ?string $rootElement = null): string
+    private function arrayToXml(#[\SensitiveParameter] array $data, ?string $rootElement = null): string
     {
         // Auto-detect root element from array keys
         if ($rootElement === null) {
@@ -177,7 +177,16 @@ class HttpClient implements HttpClientInterface
             }
         }
 
-        $xml = new \SimpleXMLElement("<?xml version='1.0' encoding='UTF-8'?><{$rootElement} version=\"2.0\" xmlns=\"http://www.isapi.org/ver20/XMLSchema\"></{$rootElement}>");
+        if (!is_string($rootElement) || !is_array($data)) {
+            throw new \InvalidArgumentException('XML payload must contain a named root object.');
+        }
+
+        $this->validateXmlName($rootElement);
+        $xml = new \SimpleXMLElement("<?xml version='1.0' encoding='UTF-8'?><{$rootElement}/>");
+        $data['@attributes'] = array_replace([
+            'version' => '2.0',
+            'xmlns' => 'http://www.isapi.org/ver20/XMLSchema',
+        ], $data['@attributes'] ?? []);
 
         $this->arrayToXmlRecursive($data, $xml);
 
@@ -187,20 +196,51 @@ class HttpClient implements HttpClientInterface
     /**
      * Recursively convert array to XML
      */
-    private function arrayToXmlRecursive(array $data, \SimpleXMLElement $xml): void
+    private function arrayToXmlRecursive(#[\SensitiveParameter] array $data, \SimpleXMLElement $xml): void
     {
         foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                $child = $xml->addChild($key);
-                $this->arrayToXmlRecursive($value, $child);
-            } else {
-                // Convert boolean to string
-                if (is_bool($value)) {
-                    $value = $value ? 'true' : 'false';
+            if ($key === '@attributes' && is_array($value)) {
+                foreach ($value as $name => $attribute) {
+                    $this->validateXmlName($name);
+                    $xml->addAttribute($name, $this->xmlScalar($attribute));
                 }
-                $xml->addChild($key, htmlspecialchars((string) $value));
+
+                continue;
+            }
+
+            $this->validateXmlName($key);
+            // Each list item repeats its field name; numeric array indices are
+            // never XML element names (RightPlan and eventType both use lists).
+            $items = is_array($value) && array_is_list($value) && $value !== [] ? $value : [$value];
+            foreach ($items as $item) {
+                if (is_array($item)) {
+                    $child = $xml->addChild($key);
+                    $this->arrayToXmlRecursive($item, $child);
+                } else {
+                    $xml->addChild($key, htmlspecialchars($this->xmlScalar($item), ENT_XML1 | ENT_QUOTES, 'UTF-8'));
+                }
             }
         }
+    }
+
+    private function validateXmlName(string|int $name): void
+    {
+        if (!is_string($name) || !preg_match('/^[A-Za-z_][A-Za-z0-9_.-]*$/D', $name)) {
+            throw new \InvalidArgumentException('XML payload contains an invalid element or attribute name.');
+        }
+    }
+
+    private function xmlScalar(#[\SensitiveParameter] mixed $value): string
+    {
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        if ($value === null || is_scalar($value)) {
+            return (string) $value;
+        }
+
+        throw new \InvalidArgumentException('XML payload values must be scalars or named objects.');
     }
 
     /**

@@ -7,7 +7,12 @@ parameters:
 
     paths:
         - src
-        - tests
+        - tests/TestCase.php
+        - tests/Unit
+        - tests/Feature
+        - tests/Support
+        - tests/Fixtures/laravel11/audit.php
+        - tests/Fixtures/laravel11/smoke.php
 
     ignoreErrors:
         # This package ships its config at src/Config/hikvision.php instead of

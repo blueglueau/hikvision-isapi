@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Shaykhnazar\HikvisionIsapi\DTOs;
 
+use Shaykhnazar\HikvisionIsapi\DTOs\Concerns\HydratesDeviceValues;
+
 final readonly class Card
 {
+    use HydratesDeviceValues;
+
     public function __construct(
         public string $employeeNo,
         public string $cardNo,
@@ -32,7 +36,7 @@ final readonly class Card
             employeeNo: $cardInfo['employeeNo'] ?? '',
             cardNo: $cardInfo['cardNo'] ?? '',
             cardType: $cardInfo['cardType'] ?? null,
-            enabled: $cardInfo['enabled'] ?? true
+            enabled: self::deviceBoolean($cardInfo['enabled'] ?? true)
         );
     }
 }

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Shaykhnazar\HikvisionIsapi\DTOs;
 
+use Shaykhnazar\HikvisionIsapi\DTOs\Concerns\HydratesDeviceValues;
 use Shaykhnazar\HikvisionIsapi\Enums\UserType;
 
 final readonly class Person
 {
+    use HydratesDeviceValues;
+
     public function __construct(
         public string $employeeNo,
         public string $name,
@@ -88,14 +91,14 @@ final readonly class Person
             employeeNo: $userInfo['employeeNo'] ?? '',
             name: $userInfo['name'] ?? '',
             userType: UserType::from($userInfo['userType'] ?? 'normal'),
-            validEnabled: $userInfo['Valid']['enable'] ?? true,
+            validEnabled: self::deviceBoolean($userInfo['Valid']['enable'] ?? true),
             beginTime: $userInfo['Valid']['beginTime'] ?? null,
             endTime: $userInfo['Valid']['endTime'] ?? null,
             doorRight: $userInfo['doorRight'] ?? null,
-            rightPlan: $userInfo['RightPlan'] ?? [],
+            rightPlan: isset($userInfo['RightPlan']) && !array_is_list($userInfo['RightPlan']) ? [$userInfo['RightPlan']] : ($userInfo['RightPlan'] ?? []),
             email: $userInfo['email'] ?? null,
             phoneNumber: $userInfo['phoneNumber'] ?? null,
-            organizationId: $userInfo['organizationId'] ?? null,
+            organizationId: self::deviceInteger($userInfo['organizationId'] ?? null),
             belongGroup: $belongGroup
         );
     }

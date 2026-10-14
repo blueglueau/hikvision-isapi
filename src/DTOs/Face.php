@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Shaykhnazar\HikvisionIsapi\DTOs;
 
+use Shaykhnazar\HikvisionIsapi\DTOs\Concerns\HydratesDeviceValues;
+
 final readonly class Face
 {
+    use HydratesDeviceValues;
+
     public function __construct(
         public string $employeeNo,
         public string $faceData,
@@ -31,7 +35,7 @@ final readonly class Face
         return new self(
             employeeNo: $faceInfo['employeeNo'] ?? '',
             faceData: $data['faceData'] ?? '',
-            faceLibId: $faceInfo['faceLibId'] ?? 1,
+            faceLibId: self::deviceInteger(array_key_exists('faceLibId', $faceInfo) ? $faceInfo['faceLibId'] : 1),
             faceLibType: $faceInfo['faceLibType'] ?? 'blackFD'
         );
     }

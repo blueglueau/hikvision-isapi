@@ -15,6 +15,8 @@ use Shaykhnazar\HikvisionIsapi\Client\HikvisionClient;
  */
 class HikvisionIsapi extends Facade
 {
+    protected static $cached = false;
+
     protected static function getFacadeAccessor(): string
     {
         return HikvisionClient::class;

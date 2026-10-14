@@ -25,8 +25,8 @@ class HikvisionIsapiServiceProvider extends ServiceProvider
         $this->app->bind(AuthenticatorInterface::class, DigestAuthenticator::class);
         $this->app->bind(HttpClientInterface::class, HttpClient::class);
 
-        // Register Device Manager as singleton (for multi-device support)
-        $this->app->singleton(DeviceManager::class, function ($app) {
+        // Laravel resets scoped bindings between queue jobs and Octane requests.
+        $this->app->scoped(DeviceManager::class, function ($app) {
             // Check if custom device provider is bound
             if ($app->bound('hikvision.device.provider')) {
                 $provider = $app->make('hikvision.device.provider');
@@ -42,8 +42,8 @@ class HikvisionIsapiServiceProvider extends ServiceProvider
             );
         });
 
-        // Register main client as singleton (uses default device for backward compatibility)
-        $this->app->singleton(HikvisionClient::class, function ($app) {
+        // Resolve the current default after provider switches and credential refreshes.
+        $this->app->bind(HikvisionClient::class, function ($app) {
             return $app->make(DeviceManager::class)->default();
         });
 
@@ -70,11 +70,12 @@ class HikvisionIsapiServiceProvider extends ServiceProvider
             'FingerprintService',
             'AccessControlService',
             'EventService',
+            'EventNotificationService',
         ];
 
         foreach ($services as $service) {
             $class = "Shaykhnazar\\HikvisionIsapi\\Services\\{$service}";
-            $this->app->singleton($class, fn ($app) => new $class($app->make(HikvisionClient::class)));
+            $this->app->bind($class, fn ($app) => new $class($app->make(HikvisionClient::class)));
         }
     }
 }

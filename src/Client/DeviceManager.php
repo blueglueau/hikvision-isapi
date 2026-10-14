@@ -23,6 +23,10 @@ class DeviceManager
 {
     private array $clients = [];
 
+    private array $clientConfigurations = [];
+
+    private array $registeredClients = [];
+
     private DeviceProviderInterface $provider;
 
     /**
@@ -31,7 +35,7 @@ class DeviceManager
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly AuthenticatorInterface $authenticator,
-        DeviceProviderInterface|array|null $provider = null
+        #[\SensitiveParameter] DeviceProviderInterface|array|null $provider = null
     ) {
         // Support legacy array config for backward compatibility
         if (is_array($provider) || $provider === null) {
@@ -55,8 +59,16 @@ class DeviceManager
             );
         }
 
-        if (!isset($this->clients[$deviceName])) {
-            $this->clients[$deviceName] = $this->createClient($deviceName);
+        if (isset($this->registeredClients[$deviceName], $this->clients[$deviceName])) {
+            return $this->clients[$deviceName];
+        }
+
+        // A worker can resolve the same device after a provider refresh or a
+        // tenant change. Never let an earlier cached client bypass that provider.
+        $configuration = $this->configurationFor($deviceName);
+        if (!isset($this->clients[$deviceName]) || $this->clientConfigurations[$deviceName] !== $configuration) {
+            $this->clients[$deviceName] = new HikvisionClient($this->httpClient, $this->authenticator, $configuration);
+            $this->clientConfigurations[$deviceName] = $configuration;
         }
 
         return $this->clients[$deviceName];
@@ -113,7 +125,7 @@ class DeviceManager
      *
      * @param  array  $config  Device configuration
      */
-    public function registerDevice(string $deviceName, array $config): void
+    public function registerDevice(string $deviceName, #[\SensitiveParameter] array $config): void
     {
         // If using ConfigDeviceProvider, we can't modify it (immutable)
         // So we create a new client directly
@@ -129,13 +141,14 @@ class DeviceManager
                 $this->authenticator,
                 $deviceConfig
             );
+            $this->registeredClients[$deviceName] = true;
         }
     }
 
     /**
-     * Create client for specific device
+     * Resolve current configuration for a specific device
      */
-    private function createClient(string $deviceName): HikvisionClient
+    private function configurationFor(string $deviceName): array
     {
         if (!$this->hasDevice($deviceName)) {
             throw new HikvisionException("Device '{$deviceName}' not found in configuration");
@@ -150,16 +163,12 @@ class DeviceManager
 
         // Merge with global config
         $globalConfig = $this->provider->getGlobalConfig();
-        $fullConfig = array_merge($globalConfig, [
+
+        return array_merge($globalConfig, [
             'devices' => [$deviceName => $deviceConfig],
             'default' => $deviceName,
         ]);
 
-        return new HikvisionClient(
-            $this->httpClient,
-            $this->authenticator,
-            $fullConfig
-        );
     }
 
     /**
@@ -168,6 +177,8 @@ class DeviceManager
     public function clearClients(): void
     {
         $this->clients = [];
+        $this->clientConfigurations = [];
+        $this->registeredClients = [];
     }
 
     /**

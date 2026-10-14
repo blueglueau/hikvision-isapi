@@ -19,7 +19,7 @@ class HikvisionClient
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly AuthenticatorInterface $authenticator,
-        private readonly array $config
+        #[\SensitiveParameter] private readonly array $config
     ) {
         $this->initialize();
     }

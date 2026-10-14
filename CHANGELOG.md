@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exception taxonomy for retry decisions: `HikvisionException::isRetryable()`, `statusCode()` and `responseBody()`, with new `DeviceUnreachableException` (connection failures, retryable) and `DeviceBusyException` (HTTP 408/429/5xx, retryable). HTTP 401 now raises the existing `AuthenticationException`.
 
 ### Fixed
+- Model device providers apply query callbacks, global scopes, model connections and attribute casts, with complete default configuration mappings.
+- Cached device records return normalized arrays; callback providers support cache invalidation and credential refresh.
+- Device clients recheck provider configuration, and Laravel scope boundaries reset the manager. Newly resolved services and the default facade follow provider and credential changes.
 - Invalid JSON responses raise `InvalidResponseException`; recognized ISAPI failures also raise exceptions when HTTP status is 200. Reboot-required responses remain available to callers.
 - Webhook configuration retains event filters, hostname fields and URL queries; enable/disable accepts wrapped JSON and unwrapped XML host responses.
 - XML lists now serialize as repeated named elements, preserving attributes, booleans and escaped text.

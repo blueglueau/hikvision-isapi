@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Shaykhnazar\HikvisionIsapi\Client\Providers;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Shaykhnazar\HikvisionIsapi\Client\Contracts\DeviceProviderInterface;
 
@@ -39,6 +40,10 @@ class DatabaseDeviceProvider implements DeviceProviderInterface
 
     private ?int $cacheTime = null;
 
+    private ?Model $model = null;
+
+    private ?\Closure $queryCallback = null;
+
     /**
      * @param  string  $table  Database table name
      * @param  string  $nameColumn  Column name for device name/identifier
@@ -51,15 +56,7 @@ class DatabaseDeviceProvider implements DeviceProviderInterface
     public function __construct(
         private readonly string $table = 'terminals',
         private readonly string $nameColumn = 'name',
-        private readonly array $configColumns = [
-            'ip' => 'ip',
-            'port' => 'port',
-            'username' => 'username',
-            'password' => 'password',
-            'protocol' => 'protocol',
-            'timeout' => 'timeout',
-            'verify_ssl' => 'verify_ssl',
-        ],
+        private readonly array $configColumns = DeviceConfiguration::COLUMNS,
         private readonly string $defaultDevice = 'primary',
         private readonly ?array $whereConditions = null,
         private readonly bool $cache = true,
@@ -124,7 +121,14 @@ class DatabaseDeviceProvider implements DeviceProviderInterface
             }
         }
 
-        $query = DB::table($this->table);
+        $query = $this->model?->newQuery() ?? DB::table($this->table);
+
+        if ($this->queryCallback !== null) {
+            $filtered = ($this->queryCallback)($query);
+            if ($filtered !== null) {
+                $query = $filtered;
+            }
+        }
 
         // Apply WHERE conditions if provided
         if ($this->whereConditions) {
@@ -138,25 +142,7 @@ class DatabaseDeviceProvider implements DeviceProviderInterface
         foreach ($terminals as $terminal) {
             $deviceName = $terminal->{$this->nameColumn};
 
-            // Map database columns to device config
-            $config = [];
-            foreach ($this->configColumns as $configKey => $dbColumn) {
-                $value = $terminal->{$dbColumn} ?? null;
-
-                // Cast boolean values
-                if (in_array($configKey, ['verify_ssl'])) {
-                    $value = (bool) $value;
-                }
-
-                // Cast integer values
-                if (in_array($configKey, ['port', 'timeout'])) {
-                    $value = (int) $value;
-                }
-
-                $config[$configKey] = $value;
-            }
-
-            $this->cachedDevices[$deviceName] = $config;
+            $this->cachedDevices[$deviceName] = DeviceConfiguration::fromRecord($terminal, $this->configColumns);
         }
 
         $this->cacheTime = time();
@@ -175,7 +161,7 @@ class DatabaseDeviceProvider implements DeviceProviderInterface
      * );
      * ```
      *
-     * @param  string  $model  Eloquent model class
+     * @param  class-string<Model>  $model  Eloquent model class
      * @param  string  $nameColumn  Column for device name
      * @param  array  $configColumns  Config mapping
      * @param  callable|null  $query  Additional query builder callback
@@ -188,19 +174,21 @@ class DatabaseDeviceProvider implements DeviceProviderInterface
         ?callable $query = null,
         string $defaultDevice = 'primary'
     ): self {
-        // Get table name from model
+        if (!is_subclass_of($model, Model::class)) {
+            throw new \InvalidArgumentException('Device model must extend Eloquent Model.');
+        }
+
         $instance = new $model;
-        $table = $instance->getTable();
-
-        // If query callback provided, we'll need to handle it differently
-        // For now, we'll use a simplified approach with WHERE conditions
-        // In the future, this could be extended to support complex queries
-
-        return new self(
-            table: $table,
+        $provider = new self(
+            table: $instance->getTable(),
             nameColumn: $nameColumn,
             configColumns: $configColumns,
             defaultDevice: $defaultDevice
         );
+
+        $provider->model = $instance;
+        $provider->queryCallback = $query === null ? null : \Closure::fromCallable($query);
+
+        return $provider;
     }
 }

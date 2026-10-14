@@ -1,0 +1,49 @@
+tests/Unit/Client/XmlPayloadTest.php
+  s_c652f3f06160e8::t_87c7d503d84912 1-63
+src/DTOs/Concerns/HydratesDeviceValues.php
+  s_c652f3f06160e8::t_fa98a45f776288 1-37
+src/Services/PersonService.php
+  s_c652f3f06160e8::t_fa98a45f776288 97
+  s_c652f3f06160e8::t_f57c664d8c481e 42
+src/Services/EventService.php
+  s_c652f3f06160e8::t_f57c664d8c481e 88
+src/DTOs/Face.php
+  s_c652f3f06160e8::t_fa98a45f776288 7-8,11-12,38
+tests/Unit/DTOs/DeviceHydrationTest.php
+  s_c652f3f06160e8::t_87c7d503d84912 1-50
+phpstan.neon
+  s_c652f3f06160e8::t_947ebd954082e0 10-15
+CHANGELOG.md
+  s_c652f3f06160e8::t_f57c664d8c481e 32
+  s_c652f3f06160e8::t_fa98a45f776288 31
+src/Client/HttpClient.php
+  s_c652f3f06160e8::t_fa98a45f776288 166,180-189,199,202-205,207-208,210-229,233-244
+  s_c652f3f06160e8::t_2cf5284ac9db2f 245
+tests/Unit/Services/XmlSearchTest.php
+  s_c652f3f06160e8::t_87c7d503d84912 1-15,17-60,75-76
+  s_c652f3f06160e8::t_279f28b501a9c5 16,61-71,73-74
+  s_c652f3f06160e8::t_015bd1de3d4389 72
+src/Services/CardService.php
+  s_c652f3f06160e8::t_f57c664d8c481e 42
+  s_c652f3f06160e8::t_fa98a45f776288 120
+src/DTOs/Card.php
+  s_c652f3f06160e8::t_fa98a45f776288 7-8,11-12,39
+src/DTOs/Person.php
+  s_c652f3f06160e8::t_fa98a45f776288 7,12-13,94,98,101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8271cf59708d6849c98a5def0ddcc3593216d7d8",
+  "prompts": {},
+  "sessions": {
+    "s_c652f3f06160e8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13a66-f8bd-79d0-87af-e46fa9e841c7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Theo <theodson@gmail.com>"
+    }
+  }
+}

@@ -11,7 +11,7 @@ class HikvisionException extends \Exception
         int $code = 0,
         ?\Throwable $previous = null,
         private readonly ?int $statusCode = null,
-        private readonly ?string $responseBody = null,
+        #[\SensitiveParameter] private readonly ?string $responseBody = null,
     ) {
         parent::__construct($message, $code, $previous);
     }
@@ -27,8 +27,8 @@ class HikvisionException extends \Exception
     /**
      * Raw response body from the device, when one was returned.
      *
-     * Never contains biometric payloads: those are only ever sent by this client,
-     * not returned by the endpoints that can fail this way.
+     * May contain personal data, including malformed search responses. Keep it
+     * out of logs; transport exception messages do not include invalid JSON.
      */
     public function responseBody(): ?string
     {

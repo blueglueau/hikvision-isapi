@@ -13,6 +13,7 @@ use Shaykhnazar\HikvisionIsapi\Exceptions\AuthenticationException;
 use Shaykhnazar\HikvisionIsapi\Exceptions\DeviceBusyException;
 use Shaykhnazar\HikvisionIsapi\Exceptions\DeviceUnreachableException;
 use Shaykhnazar\HikvisionIsapi\Exceptions\HikvisionException;
+use Shaykhnazar\HikvisionIsapi\Exceptions\InvalidResponseException;
 
 class HttpClient implements HttpClientInterface
 {
@@ -99,16 +100,21 @@ class HttpClient implements HttpClientInterface
             $response = $this->client->request($method, $uri, $options);
 
             $body = $response->getBody()->getContents();
-            $contentType = $response->getHeader('Content-Type')[0] ?? '';
+            $contentType = strtolower($response->getHeaderLine('Content-Type'));
+            $status = $response->getStatusCode();
+
+            if ($body === '' && in_array($status, [204, 205], true)) {
+                return [];
+            }
 
             // Parse JSON responses
             if (str_contains($contentType, 'application/json')) {
-                return json_decode($body, true) ?? [];
+                return $this->jsonToArray($body, $status);
             }
 
             // Parse XML responses
             if (str_contains($contentType, 'application/xml') || str_contains($contentType, 'text/xml')) {
-                return $this->xmlToArray($body);
+                return $this->xmlToArray($body, $status);
             }
 
             // Fallback: return raw body
@@ -116,6 +122,45 @@ class HttpClient implements HttpClientInterface
         } catch (GuzzleException $e) {
             throw $this->classify($e);
         }
+    }
+
+    private function jsonToArray(#[\SensitiveParameter] string $body, int $httpStatus): array
+    {
+        try {
+            $decoded = json_decode($body, true, 512, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING);
+        } catch (\JsonException $exception) {
+            throw new InvalidResponseException('Device returned malformed JSON.', previous: $exception, statusCode: $httpStatus, responseBody: $body);
+        }
+
+        if (!is_array($decoded)) {
+            throw new InvalidResponseException('Device JSON response must be an object or array.', statusCode: $httpStatus, responseBody: $body);
+        }
+
+        if (isset($decoded['ResponseStatus']) && is_array($decoded['ResponseStatus'])) {
+            $this->validateDeviceStatus($decoded['ResponseStatus'], $httpStatus, $body);
+        } elseif (isset($decoded['statusString']) || isset($decoded['subStatusCode'])) {
+            $this->validateDeviceStatus($decoded, $httpStatus, $body);
+        }
+
+        return $decoded;
+    }
+
+    private function validateDeviceStatus(#[\SensitiveParameter] array $status, int $httpStatus, #[\SensitiveParameter] string $body): void
+    {
+        $code = filter_var($status['statusCode'] ?? null, FILTER_VALIDATE_INT);
+        // ISAPI defines 2–6 as failures. 7 means the change requires a reboot;
+        // return it to the caller rather than treating an applied write as failed.
+        // https://open.hikvision.com/hardware/XMLs/DEVICE_RESPONSE_STATUS.html
+        if (!in_array($code, [2, 3, 4, 5, 6], true)) {
+            return;
+        }
+
+        $message = "Device rejected the request (ISAPI status {$code}).";
+        if ($code === 2) {
+            throw new DeviceBusyException($message, $code, statusCode: $httpStatus, responseBody: $body);
+        }
+
+        throw new HikvisionException($message, $code, statusCode: $httpStatus, responseBody: $body);
     }
 
     /**
@@ -246,14 +291,14 @@ class HttpClient implements HttpClientInterface
     /**
      * Convert XML string to array
      */
-    private function xmlToArray(string $xml): array
+    private function xmlToArray(#[\SensitiveParameter] string $xml, int $httpStatus = 200): array
     {
         // Devices occasionally emit truncated or malformed XML. Collect libxml
         // errors internally so a bad payload never raises a PHP warning.
         $previous = libxml_use_internal_errors(true);
 
         try {
-            $xmlObj = simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA);
+            $xmlObj = simplexml_load_string($xml, 'SimpleXMLElement', LIBXML_NOCDATA | LIBXML_NONET);
         } finally {
             libxml_clear_errors();
             libxml_use_internal_errors($previous);
@@ -263,6 +308,11 @@ class HttpClient implements HttpClientInterface
             return ['raw' => $xml];
         }
 
-        return json_decode(json_encode($xmlObj), true) ?? ['raw' => $xml];
+        $decoded = json_decode(json_encode($xmlObj), true) ?? ['raw' => $xml];
+        if ($xmlObj->getName() === 'ResponseStatus') {
+            $this->validateDeviceStatus($decoded, $httpStatus, $xml);
+        }
+
+        return $decoded;
     }
 }

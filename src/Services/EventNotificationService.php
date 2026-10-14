@@ -37,58 +37,31 @@ class EventNotificationService
      * @return array Response from device
      */
     public function configureHttpHost(
-        string $url,
+        #[\SensitiveParameter] string $url,
         int $id = 1,
         string $protocol = 'HTTP',
         int $port = 80,
         string $httpAuthType = 'none',
         ?string $username = null,
-        ?string $password = null,
+        #[\SensitiveParameter] ?string $password = null,
         array $eventTypes = []
     ): array {
-        // Parse URL to extract path
         $urlParts = parse_url($url);
-        $addressingFormatType = 'ipaddress';
-        $ipAddress = $urlParts['host'] ?? '';
-        $url_path = $urlParts['path'] ?? '/';
-
-        // Detect if using hostname instead of IP
-        if (!filter_var($ipAddress, FILTER_VALIDATE_IP)) {
-            $addressingFormatType = 'hostname';
+        if ($urlParts === false || empty($urlParts['host']) || !in_array(strtolower($urlParts['scheme'] ?? ''), ['http', 'https'], true)) {
+            throw new \InvalidArgumentException('Webhook URL must be an absolute HTTP or HTTPS URL.');
         }
 
-        $data = [
-            'HttpHostNotification' => [
-                'id' => $id,
-                'url' => $url_path,
-                'protocolType' => strtoupper($protocol),
-                'parameterFormatType' => 'XML',
-                'addressingFormatType' => $addressingFormatType,
-                'ipAddress' => $ipAddress,
-                'portNo' => $port,
-                'httpAuthenticationMethod' => $httpAuthType,
-                'enabled' => true,
-            ],
-        ];
-
-        // Add authentication if provided
-        if ($httpAuthType !== 'none' && $username && $password) {
-            $data['HttpHostNotification']['userName'] = $username;
-            $data['HttpHostNotification']['password'] = $password;
-        }
-
-        // Add event types if specified
-        if (!empty($eventTypes)) {
-            // Format event types for XML conversion
-            $data['HttpHostNotification']['eventList'] = [
-                'eventType' => $eventTypes,
-            ];
-        }
-
-        // Use PUT with XML format (event notification endpoint requires XML)
-        $endpoint = sprintf(self::ENDPOINT_HTTP_HOST, $id);
-
-        return $this->client->putXml($endpoint, $data);
+        return $this->configureEventListeningHost(
+            eventServerIp: $urlParts['host'],
+            eventServerPort: $port,
+            urlPath: ($urlParts['path'] ?? '/').(isset($urlParts['query']) ? '?'.$urlParts['query'] : ''),
+            protocol: $protocol,
+            hostId: $id,
+            httpAuthType: $httpAuthType,
+            username: $username,
+            password: $password,
+            eventTypes: $eventTypes,
+        );
     }
 
     /**
@@ -160,17 +133,7 @@ class EventNotificationService
      */
     public function enableHttpHost(int $id = 1): array
     {
-        $config = $this->getHttpHost($id);
-
-        if (!isset($config['HttpHostNotification'])) {
-            throw new \RuntimeException('HTTP host configuration not found');
-        }
-
-        $config['HttpHostNotification']['enabled'] = true;
-
-        $endpoint = sprintf(self::ENDPOINT_HTTP_HOST, $id);
-
-        return $this->client->putXml($endpoint, $config);
+        return $this->setHttpHostEnabled($id, true);
     }
 
     /**
@@ -181,17 +144,21 @@ class EventNotificationService
      */
     public function disableHttpHost(int $id = 1): array
     {
-        $config = $this->getHttpHost($id);
+        return $this->setHttpHostEnabled($id, false);
+    }
 
-        if (!isset($config['HttpHostNotification'])) {
+    private function setHttpHostEnabled(int $id, bool $enabled): array
+    {
+        $config = $this->getHttpHost($id);
+        $host = $config['HttpHostNotification'] ?? $config;
+
+        if (!is_array($host) || !isset($host['id'])) {
             throw new \RuntimeException('HTTP host configuration not found');
         }
 
-        $config['HttpHostNotification']['enabled'] = false;
+        $host['enabled'] = $enabled;
 
-        $endpoint = sprintf(self::ENDPOINT_HTTP_HOST, $id);
-
-        return $this->client->putXml($endpoint, $config);
+        return $this->client->putXml(sprintf(self::ENDPOINT_HTTP_HOST, $id), ['HttpHostNotification' => $host]);
     }
 
     /**
@@ -203,21 +170,19 @@ class EventNotificationService
      * @param  array  $eventTypes  Event types to subscribe to (empty = subscribe to all access control events)
      * @return array Response from device
      */
-    public function configureWebhook(string $webhookUrl, int $hostId = 1, array $eventTypes = []): array
+    public function configureWebhook(#[\SensitiveParameter] string $webhookUrl, int $hostId = 1, array $eventTypes = []): array
     {
         $urlParts = parse_url($webhookUrl);
         $protocol = strtoupper($urlParts['scheme'] ?? 'http');
         $port = $urlParts['port'] ?? ($protocol === 'HTTPS' ? 443 : 80);
 
-        // Don't specify event types - device will send all events
-        // This is simpler and avoids XML formatting issues with arrays
         return $this->configureHttpHost(
             url: $webhookUrl,
             id: $hostId,
             protocol: $protocol,
             port: $port,
             httpAuthType: 'none',
-            eventTypes: []  // Empty array = subscribe to all events
+            eventTypes: $eventTypes
         );
     }
 
@@ -242,12 +207,12 @@ class EventNotificationService
     public function configureEventListeningHost(
         string $eventServerIp,
         int $eventServerPort,
-        string $urlPath = '/',
+        #[\SensitiveParameter] string $urlPath = '/',
         string $protocol = 'HTTP',
         int $hostId = 1,
         string $httpAuthType = 'none',
         ?string $username = null,
-        ?string $password = null,
+        #[\SensitiveParameter] ?string $password = null,
         array $eventTypes = []
     ): array {
         // Validate IP address or domain name

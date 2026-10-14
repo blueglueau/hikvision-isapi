@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exception taxonomy for retry decisions: `HikvisionException::isRetryable()`, `statusCode()` and `responseBody()`, with new `DeviceUnreachableException` (connection failures, retryable) and `DeviceBusyException` (HTTP 408/429/5xx, retryable). HTTP 401 now raises the existing `AuthenticationException`.
 
 ### Fixed
+- Invalid JSON responses raise `InvalidResponseException`; recognized ISAPI failures also raise exceptions when HTTP status is 200. Reboot-required responses remain available to callers.
+- Webhook configuration retains event filters, hostname fields and URL queries; enable/disable accepts wrapped JSON and unwrapped XML host responses.
 - XML lists now serialize as repeated named elements, preserving attributes, booleans and escaped text.
 - Person, card and face DTOs normalize device boolean and integer strings; person/card XML searches and counts, and event pagination, read unwrapped responses.
 - **`searchID` is no longer taken from the wall clock in `PersonService`, `CardService` and `FingerprintService`.** ISAPI treats `searchID` as the identity of a search *session*, and every page of one search has to carry the same value. These services sent `(string) time()`, so two pages requested either side of a second boundary carried different ids — and a device seeing a new id starts a new search and serves the first page again. There is no error attached to that: the caller sees plausible records and simply never reaches the end of the list, or loops on the same page. Anything reconciling against a terminal was therefore reasoning about a roster it believed was complete and was not. `EventService` was already fixed; these three were not.

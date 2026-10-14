@@ -1,0 +1,27 @@
+CHANGELOG.md
+  s_c652f3f06160e8::t_4c3ae369c02697 14
+README.md
+  s_c652f3f06160e8::t_9b956d5ba548be 1200,1258,1285,1431,1434,1437
+  s_c652f3f06160e8::t_080fb266bee512 6,11-35,40,87,153
+  s_c652f3f06160e8::t_4c3ae369c02697 36-39
+CONTRIBUTING.md
+  s_c652f3f06160e8::t_080fb266bee512 38-39,41,44-59
+  s_c652f3f06160e8::t_4c3ae369c02697 61
+  s_c652f3f06160e8::t_03ca7a88cc6023 60
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e4509fba68cc772d06b3a70fac1dabda56bf28f7",
+  "prompts": {},
+  "sessions": {
+    "s_c652f3f06160e8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13a66-f8bd-79d0-87af-e46fa9e841c7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Theo <theodson@gmail.com>"
+    }
+  }
+}

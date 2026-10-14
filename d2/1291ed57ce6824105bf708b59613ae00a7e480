@@ -1,0 +1,33 @@
+src/DTOs/Face.php
+  s_c652f3f06160e8::t_afbb4b60381422 15,31,36-37,39
+tests/Unit/Client/XmlPayloadTest.php
+  s_c652f3f06160e8::t_baab3457c7bfc2 63-69
+src/DTOs/Card.php
+  s_c652f3f06160e8::t_afbb4b60381422 31,36-38
+src/Client/HttpClient.php
+  s_c652f3f06160e8::t_afbb4b60381422 259
+src/DTOs/Concerns/HydratesDeviceValues.php
+  s_c652f3f06160e8::t_afbb4b60381422 11-29,41-44
+tests/Unit/DTOs/DeviceHydrationTest.php
+  s_c652f3f06160e8::t_baab3457c7bfc2 50-61
+src/DTOs/Person.php
+  s_c652f3f06160e8::t_afbb4b60381422 75,91-92,95-97,99-100
+CHANGELOG.md
+  s_c652f3f06160e8::t_afbb4b60381422 31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d21291ed57ce6824105bf708b59613ae00a7e480",
+  "prompts": {},
+  "sessions": {
+    "s_c652f3f06160e8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a13a66-f8bd-79d0-87af-e46fa9e841c7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Theo <theodson@gmail.com>"
+    }
+  }
+}
